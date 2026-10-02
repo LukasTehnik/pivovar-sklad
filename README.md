@@ -2,16 +2,23 @@
 
 Interní mobilní webová aplikace pro evidenci hotového piva, výdejů a vratných sudů.
 
-## Aktuální lokální verze
+## Sdílená verze se Supabase
 
 - Eviduje PETky, plné sudy a prázdné vratné sudy v kusech.
 - Umožňuje naskladnění, výdej odběrateli a vrácení sudu.
 - Počítá aktuální stav skladu z historie pohybů.
 - Hlídá nevrácené sudy podle odběratele a velikosti.
 - Sortiment lze doplňovat přímo v aplikaci, například o PET 0,5 l nebo další druh piva.
-- Data ukládá do `localStorage` tohoto prohlížeče.
+- Uživatelé se přihlašují e-mailem a heslem.
+- Stav skladu i pohyby se synchronizují v reálném čase mezi zařízeními.
+- Pohyby se zapisují atomicky, takže nelze vydat stejný kus dvakrát.
 
-Lokální data se zatím nesdílejí mezi telefony ani počítači. Při napojení na Supabase se zachovají stejné obrazovky a skladové pohyby se přesunou do sdílené databáze.
+## Nastavení Supabase
+
+1. V Supabase spusť SQL z `supabase/migrations/20261002_initial_inventory.sql`.
+2. Zkopíruj `.env.example` do `.env.local`.
+3. Vyplň URL projektu a **publishable key** z nastavení projektu. Nikdy nepoužívej service role key.
+4. V Authentication povol e-mailové přihlášení. První správce si může vytvořit účet přímo v aplikaci.
 
 ## Spuštění
 
@@ -26,7 +33,3 @@ Kontrola produkčního sestavení:
 npm run build
 npm run lint
 ```
-
-## Další krok
-
-Před nasazením pro více lidí vytvořit Supabase projekt, přidat přihlášení uživatelů a nahradit lokální úložiště sdílenou databází s realtime synchronizací.
