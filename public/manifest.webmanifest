@@ -1,0 +1,9 @@
+{
+  "name": "Pivovar sklad",
+  "short_name": "Pivovar sklad",
+  "description": "Interní skladová evidence pivovaru",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#f5f7f6",
+  "theme_color": "#183d32"
+}
