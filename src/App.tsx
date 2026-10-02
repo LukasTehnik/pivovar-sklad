@@ -93,7 +93,43 @@ export default function App() {
 }
 
 function Notice({ title, children }: { title: string; children: React.ReactNode }) { return <main className="app-shell"><section className="panel"><h1>{title}</h1><p>{children}</p></section></main> }
-function Auth() { const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [message, setMessage] = useState(''); const login = async (e: FormEvent) => { e.preventDefault(); const { error } = await supabase!.auth.signInWithPassword({ email, password }); setMessage(error?.message ?? '') }; const signup = async () => { const { error } = await supabase!.auth.signUp({ email, password }); setMessage(error?.message ?? 'Účet vytvořen. Případně potvrď e-mail.') }; return <main className="app-shell"><section className="panel auth"><h1>Pivovar sklad</h1><p>Přihlásit se může každý správce skladu.</p><form className="form-stack" onSubmit={e => void login(e)}><label>E-mail<input required type="email" value={email} onChange={e => setEmail(e.target.value)}/></label><label>Heslo<input required minLength={6} type="password" value={password} onChange={e => setPassword(e.target.value)}/></label>{message && <p className="form-error">{message}</p>}<button className="button primary">Přihlásit</button><button type="button" className="button ghost" onClick={() => void signup()}>Vytvořit první účet</button></form></section></main> }
+function Auth() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const login = async (e: FormEvent) => {
+    e.preventDefault(); setSubmitting(true); setMessage('')
+    const { error } = await supabase!.auth.signInWithPassword({ email, password })
+    setMessage(error?.message ?? ''); setSubmitting(false)
+  }
+  const signup = async () => {
+    setSubmitting(true); setMessage('')
+    const { error } = await supabase!.auth.signUp({ email, password })
+    setMessage(error?.message ?? 'Účet je vytvořený. Pokud je potřeba, potvrď e-mail.')
+    setSubmitting(false)
+  }
+  return <main className="auth-page">
+    <section className="auth-card">
+      <div className="auth-form-wrap">
+        <div className="auth-form-head">
+          <span className="auth-mobile-mark">PS</span>
+          <p className="auth-kicker">Interní evidence skladu</p>
+          <h2>Přihlášení správce</h2>
+          <p>Přihlas se ke skladu pivovaru.</p>
+        </div>
+        <form className="auth-form" onSubmit={e => void login(e)}>
+          <label>E-mail<input required autoComplete="email" type="email" placeholder="jmeno@pivovar.cz" value={email} onChange={e => setEmail(e.target.value)}/></label>
+          <label>Heslo<input required autoComplete="current-password" minLength={6} type="password" placeholder="Tvoje heslo" value={password} onChange={e => setPassword(e.target.value)}/></label>
+          {message && <p className="form-error auth-message">{message}</p>}
+          <button className="button primary auth-submit" disabled={submitting}>{submitting ? 'Pracuji…' : 'Přihlásit se'}</button>
+          <button type="button" className="auth-signup" disabled={submitting || !email || password.length < 6} onClick={() => void signup()}>Ještě nemáš účet? <strong>Vytvořit první účet</strong></button>
+        </form>
+        <p className="auth-footnote">Pivovar sklad · pouze pro oprávněné uživatele</p>
+      </div>
+    </section>
+  </main>
+}
 function Stock({ products, balances, loans }: { products: Product[]; balances: Record<string, number>; loans: Record<string, number> }) { const low = products.filter(p => (balances[p.id] ?? 0) <= p.reorder_level); return <><section className="summary-grid"><Summary label="Aktivní položky" value={products.length} detail="Sortiment lze kdykoli rozšířit"/><Summary label="Položek dochází" value={low.length} detail={low.length ? low.slice(0, 2).map(p => p.name).join(', ') : 'Vše je nad minimem'} alert={Boolean(low.length)}/><Summary label="Nevrácené sudy" value={Object.values(loans).reduce((a, b) => a + b, 0)} detail="U odběratelů"/></section><section className="panel"><div className="panel-head"><div><h2>Skladové položky</h2><p>Počet kusů, které jsou právě k dispozici.</p></div></div><div className="stock-list">{products.map(p => <article className="stock-row" key={p.id}><div className="product-dot" data-kind={p.package_kind}></div><div className="product-main"><strong>{p.name}</strong><span>{label(p)} · minimum {p.reorder_level} ks</span></div><div className={(balances[p.id] ?? 0) <= p.reorder_level ? 'count low' : 'count'}><strong>{balances[p.id] ?? 0}</strong><span>ks</span></div></article>)}</div></section></> }
 function Summary({ label, value, detail, alert }: { label: string; value: number; detail: string; alert?: boolean }) { return <article className={`summary ${alert ? 'alert' : ''}`}><span>{label}</span><strong>{value}</strong><small>{detail}</small></article> }
 function Customers({ customers, loans, onAdd }: { customers: Customer[]; loans: Record<string, number>; onAdd: (n: string) => Promise<string | undefined> }) { const [name, setName] = useState(''); return <section className="panel"><div className="panel-head"><div><h2>Odběratelé a vratné sudy</h2><p>Kolik sudů má každý aktuálně u sebe.</p></div><form className="inline-form" onSubmit={async e => { e.preventDefault(); if (await onAdd(name)) setName('') }}><input placeholder="Nový odběratel" value={name} onChange={e => setName(e.target.value)}/><button className="button secondary">Přidat</button></form></div>{customers.filter(c => c.active).map(c => <article className="customer-row" key={c.id}><div><strong>{c.name}</strong><small>Nevrácené sudy</small></div><div className="loan-chips">{[15,30,50].map(v => <span key={v}>{loans[`${c.id}-${v}`] ?? 0}× {v} l</span>)}</div></article>)}</section> }
